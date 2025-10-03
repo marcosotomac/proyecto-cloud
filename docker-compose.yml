@@ -1,0 +1,187 @@
+services:
+  # PostgreSQL para el servicio de usuarios
+  postgres:
+    image: postgres:16
+    container_name: llm-postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # MinIO para almacenamiento S3
+  minio:
+    image: minio/minio:latest
+    container_name: llm-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Console Web UI
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Servicio de Usuarios/Auth
+  users-service:
+    build: ./users
+    container_name: llm-users-service
+    env_file:
+      - ./users/.env.dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Servicio Text-to-Image
+  text-image-service:
+    build: ./text_image_api
+    container_name: llm-text-image-service
+    env_file:
+      - ./text_image_api/.env.dev
+    ports:
+      - "8000:8000"
+    depends_on:
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Servicio Text-to-Speech
+  text-speech-service:
+    build: ./text_speech_api
+    container_name: llm-text-speech-service
+    env_file:
+      - ./text_speech_api/.env.dev
+    ports:
+      - "8001:8000"
+    depends_on:
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # MongoDB para el servicio LLM Chat
+  mongo:
+    image: mongo:7
+    container_name: llm-mongo
+    environment:
+      MONGO_INITDB_DATABASE: llm_chat
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # Servicio LLM Chat con GitHub Models
+  llm-chat-service:
+    build: ./llm-api
+    container_name: llm-chat-service
+    env_file:
+      - ./llm-api/.env
+    ports:
+      - "8002:8002"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Servicio de Analytics
+  analytics-service:
+    build: ./analytics_api
+    container_name: llm-analytics-service
+    env_file:
+      - ./analytics_api/.env
+    ports:
+      - "8005:8005"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # API Gateway - Punto de entrada unificado
+  gateway-service:
+    build: ./gateway_api
+    container_name: llm-gateway-service
+    env_file:
+      - ./gateway_api/.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      users-service:
+        condition: service_healthy
+      llm-chat-service:
+        condition: service_healthy
+      text-image-service:
+        condition: service_healthy
+      text-speech-service:
+        condition: service_healthy
+      analytics-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+  mongo_data:
+    driver: local

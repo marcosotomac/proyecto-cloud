@@ -1,0 +1,58 @@
+# docker-compose.override.yml
+# Este archivo se carga automáticamente junto con docker-compose.yml
+# Úsalo para configuraciones específicas de desarrollo local
+
+services:
+  users-service:
+    volumes:
+      # Hot reload para desarrollo
+      - ./users/src:/app/src:cached
+      - ./users/package.json:/app/package.json:cached
+    environment:
+      - NODE_ENV=development
+    ports:
+      # Exponer puerto de debug para Node.js
+      - "9229:9229"
+
+  text-image-service:
+    volumes:
+      # Hot reload para desarrollo
+      - ./text_image_api:/app:cached
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+
+  text-speech-service:
+    volumes:
+      # Hot reload para desarrollo
+      - ./text_speech_api:/app:cached
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+
+  postgres:
+    ports:
+      # Exponer puerto para conexión externa (ej: pgAdmin)
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=dev_db
+    volumes:
+      # Persistir datos en desarrollo
+      - postgres_dev_data:/var/lib/postgresql/data
+
+  minio:
+    ports:
+      # Exponer ambos puertos para desarrollo
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
+    volumes:
+      # Persistir datos en desarrollo
+      - minio_dev_data:/data
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  minio_dev_data:
+    driver: local

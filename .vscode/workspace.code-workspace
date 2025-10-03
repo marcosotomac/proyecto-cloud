@@ -1,0 +1,145 @@
+{
+  "folders": [
+    {
+      "name": "🏠 Root",
+      "path": "."
+    },
+    {
+      "name": "👥 Users Service",
+      "path": "./users"
+    },
+    {
+      "name": "🖼️ Text-Image API",
+      "path": "./text_image_api"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "python.defaultInterpreterPath": "./text_image_api/.venv/bin/python",
+    "eslint.workingDirectories": ["users"],
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/__pycache__": true,
+      "**/.pytest_cache": true,
+      "**/dist": true,
+      "**/build": true
+    },
+    "terminal.integrated.cwd": "${workspaceFolder}"
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.flake8",
+      "ms-python.black-formatter",
+      "ms-vscode.vscode-typescript-next",
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "ms-vscode.vscode-json",
+      "redhat.vscode-yaml",
+      "ms-vscode-remote.remote-containers"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "🚀 Build & Start All Services",
+        "type": "shell",
+        "command": "make up-build",
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "label": "🔍 Health Check",
+        "type": "shell",
+        "command": "make healthcheck",
+        "group": "test",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "label": "🔐 Test Auth Flow",
+        "type": "shell",
+        "command": "make test-auth",
+        "group": "test",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "label": "🖼️ Test Image Generation",
+        "type": "shell",
+        "command": "make test-image",
+        "group": "test",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "label": "📊 View Logs",
+        "type": "shell",
+        "command": "make logs",
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      },
+      {
+        "label": "🧹 Clean & Stop",
+        "type": "shell",
+        "command": "make clean",
+        "group": "build",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared"
+        }
+      }
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🐍 Debug Text-Image API",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "${workspaceFolder}/text_image_api/main.py",
+        "cwd": "${workspaceFolder}/text_image_api",
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}/text_image_api"
+        },
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "📦 Debug Users Service",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceFolder}/users/src/main.ts",
+        "cwd": "${workspaceFolder}/users",
+        "runtimeExecutable": "pnpm",
+        "runtimeArgs": ["run", "start:dev"],
+        "console": "integratedTerminal"
+      }
+    ]
+  }
+}
