@@ -50,26 +50,26 @@ Plataforma empresarial de microservicios para APIs LLM con autenticación JWT, a
 graph TB
     Client[Cliente Web/Móvil<br/>Next.js 15]
     Gateway[API Gateway<br/>FastAPI:8080]
-    
+
     Client -->|HTTPS/JWT| Gateway
-    
+
     Gateway -->|/auth/*| Users[Users Service<br/>NestJS:3000]
     Gateway -->|/chat/*| LLM[LLM Chat Service<br/>FastAPI:8002]
     Gateway -->|/image/*| Image[Text-to-Image<br/>FastAPI:8000]
     Gateway -->|/tts/*| Speech[Text-to-Speech<br/>FastAPI:8001]
     Gateway -->|/analytics/*| Analytics[Analytics Service<br/>FastAPI:8005]
-    
+
     Users -->|SQL| PG[(PostgreSQL<br/>:5432)]
     LLM -->|NoSQL| Mongo[(MongoDB<br/>:27017)]
     Analytics -->|NoSQL| Mongo
-    
+
     Image -->|S3| MinIO[MinIO S3<br/>:9000/9001]
     Speech -->|S3| MinIO
-    
+
     LLM -->|API| GitHub[GitHub Models<br/>GPT-4o]
     Image -->|API| Poll[Pollinations.ai]
     Speech -->|API| GTTS[Google TTS]
-    
+
     style Gateway fill:#ff6b6b
     style Client fill:#4ecdc4
     style Users fill:#45b7d1
@@ -187,6 +187,7 @@ graph TB
 ## � Stack Tecnológico
 
 ### Frontend
+
 - **Framework:** Next.js 15.5 con React 19.1
 - **Lenguaje:** TypeScript 5
 - **Estilos:** Tailwind CSS 3.4
@@ -197,28 +198,33 @@ graph TB
 - **Temas:** next-themes
 
 ### Backend
+
 - **Node.js:** NestJS 10 (Users Service)
 - **Python:** FastAPI 0.115 (Gateway, LLM, Image, Speech, Analytics)
 - **TypeScript/JavaScript:** Node.js 18+
 - **Validación:** Pydantic, class-validator
 
 ### Bases de Datos
+
 - **PostgreSQL 16:** Datos relacionales (usuarios, sesiones)
 - **MongoDB 7:** Datos no estructurados (chats, analytics)
 - **MinIO:** Almacenamiento S3-compatible (imágenes, audios)
 
 ### Infraestructura
+
 - **Containerización:** Docker + Docker Compose
 - **Orquestación:** Docker Compose con healthchecks
 - **Networking:** Bridge network interna
 - **Volúmenes:** Persistencia de datos local
 
 ### APIs Externas
+
 - **GitHub Models:** GPT-4o, GPT-4o-mini
 - **Pollinations.ai:** Generación de imágenes
 - **Google TTS:** Síntesis de voz
 
 ### Desarrollo
+
 - **Gestor de Paquetes:** pnpm (frontend), npm (users), pip (python services)
 - **Linters:** ESLint, Prettier
 - **Build:** Turbopack (Next.js), esbuild (NestJS)
