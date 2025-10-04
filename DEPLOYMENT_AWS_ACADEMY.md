@@ -2,33 +2,8 @@
 
 Esta guía te ayudará a desplegar manualmente la aplicación de microservicios en AWS Academy utilizando **únicamente la consola web de AWS**, sin necesidad de SSH, terminal o línea de comandos. Todo se hará mediante clics en la interfaz gráfica de AWS.
 
-El código se clonará automáticamente desde GitHub: `https://github.com/marcosoto⚠️ **Nota:** Es recomendable esperar a tener la IP pública antes de lanzar la instancia, o usar la IP asignada elásticamente si está disponible en AWS Academy.
+El código se clonará automáticamente desde GitHub: `https://github.com/marcosotomac/proyecto-cloud`
 
-### 5. Esperar la Inicialización (15-20 minutos)
-
-El script de User Data se ejecuta automáticamente cuando la instancia arranca por primera vez. Este proceso incluye:
-
-1. ✅ Instalación de Docker y Docker Compose
-2. ✅ Instalación de Git
-3. ✅ Clonación del repositorio desde GitHub
-4. ✅ Creación de archivos .env con tus credenciales
-5. ✅ Construcción de imágenes Docker (esto toma tiempo)
-6. ✅ Inicio de todos los contenedores
-
-**Monitorear el progreso:**
-
-1. Ve a **EC2** → **Instances**
-2. Selecciona tu instancia `microservices-app`
-3. Haz clic en la pestaña **Status checks**
-4. Espera a que ambos checks estén en 2/2 (verde)
-5. Haz clic en **Actions** → **Monitor and troubleshoot** → **Get system log**
-6. Busca líneas que indiquen:
-   - "Cloning into 'proyecto-cloud'"
-   - "Building"
-   - "Creating"
-   - "Started"
-
-⏱️ **Tiempo estimado:** 15-20 minutos para completar todo el proceso
 Utilizaremos Amazon S3 en lugar de MinIO para el almacenamiento de archivos.
 
 ---
@@ -42,6 +17,10 @@ Utilizaremos Amazon S3 en lugar de MinIO para el almacenamiento de archivos.
 5. [Lanzamiento de Instancia EC2](#lanzamiento-de-instancia-ec2)
 6. [Verificación del Deployment](#verificación-del-deployment)
 7. [Troubleshooting](#troubleshooting)
+8. [Actualizar la Aplicación](#actualizar-la-aplicación)
+9. [Detener la Aplicación](#detener-la-aplicación)
+10. [Monitoreo y Backup](#monitoreo-y-backup)
+11. [Notas Importantes sobre AWS Academy](#notas-importantes-sobre-aws-academy)
 
 ---
 
@@ -165,127 +144,9 @@ Para cada bucket creado:
 ]
 ```
 
-### 4. Crear Usuario IAM para S3 (Opcional pero Recomendado)
-
-⚠️ **Nota:** En AWS Academy, el acceso a IAM puede estar limitado. Si no puedes crear usuarios IAM, usa las credenciales del Lab directamente (las copiarás en el script de deployment).
-
 ---
 
 ## 🖥️ Lanzamiento de Instancia EC2
-
----
-
-## � Preparación del Código (en tu computadora local)
-
-### 1. Actualizar Variables de Entorno Localmente
-
-Antes de subir el código, actualiza estos archivos en tu computadora:
-
-#### a) Archivo `llm-api/.env`
-
-Abre el archivo y reemplaza el token de GitHub:
-
-```properties
-GITHUB_TOKEN=ghp_TU_TOKEN_REAL_DE_GITHUB_AQUI
-```
-
-#### b) Archivo `text_image_api/.env`
-
-Crea o edita este archivo con tus credenciales de AWS:
-
-```properties
-# Service Configuration
-PORT=8000
-SERVICE_NAME=text-image-service
-
-# JWT Configuration
-JWT_ACCESS_SECRET=dev-super-secret-access-key-2024
-
-# Users Service
-USERS_SERVICE_URL=http://users-service:3000
-
-# AWS S3 Configuration
-AWS_REGION=us-east-1
-S3_BUCKET_NAME=tu-nombre-text-image-bucket
-AWS_ACCESS_KEY_ID=ASIA_TU_ACCESS_KEY_AQUI
-AWS_SECRET_ACCESS_KEY=TU_SECRET_ACCESS_KEY_AQUI
-AWS_SESSION_TOKEN=TU_SESSION_TOKEN_AQUI
-
-# Pollinations API
-POLLINATIONS_API_URL=https://image.pollinations.ai/prompt
-```
-
-#### c) Archivo `text_speech_api/.env`
-
-Crea o edita este archivo:
-
-```properties
-# Service Configuration
-PORT=8000
-SERVICE_NAME=text-speech-service
-
-# JWT Configuration
-JWT_ACCESS_SECRET=dev-super-secret-access-key-2024
-
-# Users Service
-USERS_SERVICE_URL=http://users-service:3000
-
-# AWS S3 Configuration
-AWS_REGION=us-east-1
-S3_BUCKET_NAME=tu-nombre-text-speech-bucket
-AWS_ACCESS_KEY_ID=ASIA_TU_ACCESS_KEY_AQUI
-AWS_SECRET_ACCESS_KEY=TU_SECRET_ACCESS_KEY_AQUI
-AWS_SESSION_TOKEN=TU_SESSION_TOKEN_AQUI
-
-# Pollinations API
-POLLINATIONS_TTS_URL=https://text-to-speech.pollinations.ai/
-```
-
-#### d) Archivo `frontend/.env.local`
-
-⚠️ **Importante:** Necesitas saber la IP pública de tu EC2. La obtendrás después de crear la instancia.
-
-Por ahora, déjalo así (lo actualizaremos después):
-
-```bash
-NEXT_PUBLIC_API_URL=http://TU_IP_PUBLICA_EC2:8080/api
-```
-
-### 2. Crear archivo docker-compose.prod.yml
-
-En la raíz de tu proyecto, crea un archivo llamado `docker-compose.prod.yml` con este contenido.
-
-### 3. Comprimir el Proyecto
-
-1. Asegúrate de que todos los archivos estén guardados
-2. **Comprime** toda la carpeta del proyecto en un archivo ZIP
-3. Nombre sugerido: `proyecto-cloud.zip`
-
----
-
-## 📤 Subida de Código a S3
-
-### 1. Crear Bucket para el Código
-
-1. Ve a la consola de **S3**
-2. Haz clic en **Create bucket**
-3. **Nombre:** `tu-nombre-deployment-code`
-4. **Región:** us-east-1
-5. **Mantén** marcado "Block all public access" (el código no debe ser público)
-6. Haz clic en **Create bucket**
-
-### 2. Subir el Código Comprimido
-
-1. Haz clic en el bucket `tu-nombre-deployment-code`
-2. Haz clic en **Upload**
-3. Haz clic en **Add files**
-4. Selecciona tu archivo `proyecto-cloud.zip`
-5. Haz clic en **Upload**
-6. Espera a que se complete la subida
-
----
-
-## �🖥️ Lanzamiento de Instancia EC2
 
 ### 1. Crear Security Group
 
@@ -427,43 +288,15 @@ docker compose -f docker-compose.prod.yml up -d
    - Si ya lanzaste la instancia con `TU_IP_PUBLICA_EC2`, necesitarás actualizar el frontend después (ver sección Troubleshooting)
 
 ⚠️ **Nota:** Es recomendable esperar a tener la IP pública antes de lanzar la instancia, o usar la IP asignada elásticamente si está disponible en AWS Academy.
-aws_session_token = TU_SESSION_TOKEN_AQUI
-EOF
 
-cat > /root/.aws/config << 'EOF'
-[default]
-region = us-east-1
-EOF
-
-# Descargar código desde S3
-
-cd /home/ubuntu
-aws s3 cp s3://tu-nombre-deployment-code/proyecto-cloud.zip .
-unzip -q proyecto-cloud.zip
-cd proyecto-cloud
-
-# Dar permisos
-
-chown -R ubuntu:ubuntu /home/ubuntu/proyecto-cloud
-
-# Construir y ejecutar
-
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
-
-```
-
-9. Haz clic en **Launch instance**
-10. **Copia la IP pública** (aparecerá en la lista de instancias)
-
-### 3. Esperar la Inicialización (15-20 minutos)
+### 5. Esperar la Inicialización (15-20 minutos)
 
 El script de User Data se ejecuta automáticamente cuando la instancia arranca por primera vez. Este proceso incluye:
 
 1. ✅ Instalación de Docker y Docker Compose
-2. ✅ Instalación de AWS CLI
-3. ✅ Configuración de credenciales AWS
-4. ✅ Descarga del código desde S3
+2. ✅ Instalación de Git
+3. ✅ Clonación del repositorio desde GitHub
+4. ✅ Creación de archivos .env con las configuraciones
 5. ✅ Construcción de imágenes Docker (esto toma tiempo)
 6. ✅ Inicio de todos los contenedores
 
@@ -487,45 +320,45 @@ El script de User Data se ejecuta automáticamente cuando la instancia arranca p
 Abre tu navegador y prueba estos endpoints (reemplaza `EC2_PUBLIC_IP` con tu IP):
 
 #### a) Frontend (Aplicación Web)
-```
 
+```
 http://EC2_PUBLIC_IP:3001
-
 ```
+
 Deberías ver la página principal de la aplicación.
 
 #### b) Gateway API
-```
 
+```
 http://EC2_PUBLIC_IP:8080/health
 o
 http://EC2_PUBLIC_IP:8080/docs
-
 ```
+
 Deberías ver un mensaje de health check o la documentación de la API.
 
 #### c) Users Service
+
 ```
-
 http://EC2_PUBLIC_IP:3000/health
-
 ```
 
 #### d) LLM Service
+
 ```
-
 http://EC2_PUBLIC_IP:8002/health
-
 ```
 
 ### 2. Probar la Aplicación Completa
 
 1. **Registro de Usuario:**
+
    - Abre `http://EC2_PUBLIC_IP:3001` en tu navegador
    - Ve a la página de registro
    - Crea una cuenta nueva
 
 2. **Login:**
+
    - Inicia sesión con tus credenciales
 
 3. **Probar Servicios:**
@@ -541,7 +374,6 @@ http://EC2_PUBLIC_IP:8002/health
 4. Abre tu bucket `tu-nombre-text-speech-bucket`
 5. Deberías ver los archivos de audio generados
 
-
 ---
 
 ## 🐛 Troubleshooting
@@ -551,11 +383,13 @@ http://EC2_PUBLIC_IP:8002/health
 **Verificaciones desde la consola web:**
 
 1. **Verificar Security Group:**
+
    - Ve a **EC2** → **Security Groups**
    - Selecciona `microservices-sg`
    - Verifica que los puertos estén abiertos (8080, 3000, 8002, 8000, 8001, 8005, 3001)
 
 2. **Verificar que la instancia esté corriendo:**
+
    - Ve a **EC2** → **Instances**
    - La instancia debe estar en estado "Running" (verde)
 
@@ -570,10 +404,12 @@ http://EC2_PUBLIC_IP:8002/health
 **Solución:**
 
 1. **Verificar Buckets S3:**
+
    - Ve a **S3** → Busca tus buckets
    - Verifica que existan: `tu-nombre-text-image-bucket` y `tu-nombre-text-speech-bucket`
 
 2. **Verificar Políticas de Bucket:**
+
    - Abre cada bucket
    - Ve a **Permissions** → **Bucket Policy**
    - Verifica que la política de acceso público esté configurada
@@ -582,11 +418,9 @@ http://EC2_PUBLIC_IP:8002/health
    - Las credenciales expiran después de unas horas
    - Ve a AWS Academy → **AWS Details** → **Show**
    - Copia las nuevas credenciales (Access Key, Secret Key, Session Token)
-   - Actualiza los archivos `.env` localmente
-   - Vuelve a comprimir el proyecto
-   - Sube el nuevo ZIP a S3
+   - **Actualiza el script de User Data** con las nuevas credenciales
    - **Termina** la instancia EC2 actual
-   - **Crea una nueva instancia** con el mismo proceso (User Data actualizará las credenciales)
+   - **Crea una nueva instancia** con el script actualizado (el código se clonará automáticamente desde GitHub)
 
 ### Problema: La instancia no se inicia correctamente
 
@@ -612,7 +446,7 @@ http://EC2_PUBLIC_IP:8002/health
 2. Si la IP estaba incorrecta:
    - **Termina** la instancia actual
    - **Crea una nueva instancia** con la IP correcta en el script
-   - O actualiza manualmente el archivo (ver sección de actualización)
+   - El código se clonará automáticamente desde GitHub
 
 ### Problema: El deployment tarda mucho tiempo
 
@@ -639,21 +473,17 @@ http://EC2_PUBLIC_IP:8002/health
 
 Para actualizar el código después de hacer cambios en GitHub:
 
-### Método 1: Terminando y Recreando la Instancia (Recomendado)
+### Método Recomendado: Recrear la Instancia
 
-1. **Haz push de tus cambios a GitHub** (desde tu computadora local)
+1. **Haz push de tus cambios a GitHub** (desde tu computadora local con Git)
 2. **Termina la instancia actual:**
    - Ve a **EC2** → **Instances**
    - Selecciona tu instancia
    - **Actions** → **Instance State** → **Terminate instance**
 3. **Crea una nueva instancia** siguiendo los mismos pasos de deployment
-4. El script clonará la versión más reciente del código
+4. El script clonará automáticamente la versión más reciente del código desde GitHub
 
-### Método 2: Actualizando la Instancia Existente (Requiere crear nueva AMI con SSH habilitado)
-
-⚠️ Este método requeriría acceso SSH, lo cual está fuera del alcance de esta guía 100% web.
-
-**Alternativa recomendada:** Usar el Método 1 (terminar y recrear)
+⚠️ **Nota:** Como estamos usando 100% consola web sin SSH, este es el método más sencillo para actualizar la aplicación.
 
 ---
 
@@ -679,7 +509,7 @@ Para actualizar el código después de hacer cambios en GitHub:
 
 ---
 
-## 📊 Monitoreo desde la Consola
+## 📊 Monitoreo y Backup
 
 ### Monitorear Uso de Recursos
 
@@ -696,10 +526,6 @@ Para actualizar el código después de hacer cambios en GitHub:
 2. **Actions** → **Monitor and troubleshoot** → **Get system log**
 3. Revisa los logs de arranque y errores
 
----
-
-## 💾 Backup de Datos
-
 ### Backup de Archivos en S3
 
 Los archivos en S3 ya están respaldados automáticamente. Para mayor seguridad:
@@ -709,15 +535,9 @@ Los archivos en S3 ya están respaldados automáticamente. Para mayor seguridad:
 3. **Management** → **Replication rules**
 4. Configura replicación a otra región (opcional)
 
-### Backup de Base de Datos MongoDB
+### Backup Completo con AMI
 
-MongoDB está dentro del contenedor Docker. Para hacer backup manual:
-
-⚠️ **Nota:** Esto requeriría acceso SSH. Como alternativa:
-
-**Opción 1:** Usar AWS Backup (si está disponible en Academy)
-**Opción 2:** Exportar datos desde la aplicación antes de terminar la instancia
-**Opción 3:** Crear una AMI de la instancia EC2:
+Para crear una imagen completa de la instancia:
 
 1. Ve a **EC2** → **Instances**
 2. Selecciona tu instancia
@@ -753,6 +573,7 @@ Esto creará una imagen completa que puedes restaurar más tarde.
 ### 3. Persistencia de Recursos
 
 **Persisten entre sesiones:**
+
 - ✅ Buckets S3 y su contenido
 - ✅ Instancias EC2 detenidas (no terminadas)
 - ✅ Volúmenes EBS
@@ -760,6 +581,7 @@ Esto creará una imagen completa que puedes restaurar más tarde.
 - ✅ Código en GitHub (siempre disponible)
 
 **NO persisten:**
+
 - ❌ Instancias EC2 terminadas
 - ❌ Credenciales AWS (cambian cada sesión)
 - ❌ Contenedores Docker corriendo (se detienen con la instancia)
@@ -772,11 +594,13 @@ Esto creará una imagen completa que puedes restaurar más tarde.
 4. **Dos opciones:**
 
    **Opción A - Si la instancia existe y está detenida:**
+
    - Start la instancia
    - ⚠️ Las credenciales dentro siguen siendo las viejas
    - Deberás terminarla y crear una nueva si necesitas usar S3
 
    **Opción B - Crear nueva instancia (Recomendado):**
+
    - Termina la instancia anterior
    - Crea nueva instancia con credenciales actualizadas
    - El código se clonará automáticamente desde GitHub
@@ -809,23 +633,19 @@ Si todo funcionó correctamente, deberías tener:
 **URLs de Acceso:**
 
 ```
-
 Frontend: http://TU_IP_PUBLICA:3001
 API Gateway: http://TU_IP_PUBLICA:8080
 API Docs: http://TU_IP_PUBLICA:8080/docs
-
 ```
 
 **Servicios Individuales:**
 
 ```
-
 Users: http://TU_IP_PUBLICA:3000
 LLM Chat: http://TU_IP_PUBLICA:8002
 Text-Image: http://TU_IP_PUBLICA:8000
 Text-Speech: http://TU_IP_PUBLICA:8001
 Analytics: http://TU_IP_PUBLICA:8005
-
 ```
 
 **Buckets S3:**
@@ -854,4 +674,3 @@ Antes de terminar, verifica:
 - [ ] Entiendes cómo actualizar las credenciales AWS
 
 ¡Felicitaciones! 🎉 Has desplegado exitosamente la aplicación completa en AWS Academy.
-```
