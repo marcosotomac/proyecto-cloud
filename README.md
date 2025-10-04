@@ -63,8 +63,8 @@ graph TB
     LLM -->|NoSQL| Mongo[(MongoDB<br/>:27017)]
     Analytics -->|NoSQL| Mongo
 
-    Image -->|S3| MinIO[MinIO S3<br/>:9000/9001]
-    Speech -->|S3| MinIO
+    Image -->|S3| Bucket[Bucket S3<br/>:9000/9001]
+    Speech -->|S3| Bucket
 
     LLM -->|API| GitHub[GitHub Models<br/>GPT-4o]
     Image -->|API| Poll[Pollinations.ai]
