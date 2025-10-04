@@ -1,10 +1,8 @@
-# Environment variables
-.env
-.env.*
-!.env.example
-!.env.dev
+# Node modules - estos se regeneran con npm/pnpm install
+node_modules/
+.pnpm-store/
 
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
@@ -29,12 +27,17 @@ venv/
 ENV/
 env/
 
-# Node
-node_modules/
-npm-debug.log
-yarn-error.log
-pnpm-debug.log
-.pnpm-store/
+# Next.js build
+.next/
+out/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDEs
 .vscode/
@@ -43,21 +46,13 @@ pnpm-debug.log
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-logs/
-
 # Database
 *.sqlite
 *.db
 
-# Docker
-.docker/
-
 # Temporary files
 *.tmp
 *.temp
+
+# IMPORTANTE: NO ignorar archivos .env
+# Los archivos .env se subirán al repositorio
