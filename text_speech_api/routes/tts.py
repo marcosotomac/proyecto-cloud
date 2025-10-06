@@ -5,6 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from typing import Optional, Dict, Any
+from sqlalchemy.orm import Session
 
 from models.tts import (
     TTSGenerateRequest,
@@ -16,9 +17,11 @@ from models.tts import (
     TTSMetadata,
     ErrorResponse
 )
+from models.db_models import TTSConversion
 from clients.pollinations import PollinationsTTSClient
 from clients.s3 import s3_client
 from middleware.auth import optional_auth, require_auth
+from db import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -39,20 +42,21 @@ tts_client = PollinationsTTSClient()
 )
 async def generate_speech(
     request: TTSGenerateRequest,
-    user: Optional[Dict[str, Any]] = Depends(optional_auth)
+    user: Optional[Dict[str, Any]] = Depends(optional_auth),
+    db: Session = Depends(get_db)
 ):
     """
     Generate speech from text
 
     - Supports both authenticated and anonymous users
     - Authenticated requests are linked to user account
-    - Stores audio and metadata in S3
+    - Stores audio and metadata in S3 and PostgreSQL
     - Returns S3 paths and metadata
     """
     request_id = str(uuid.uuid4())
     start_time = time.time()
 
-    user_id = user.get("user_id") if user else None
+    user_id = user.get("user_id") if user else "anonymous"
     username = user.get("email") if user else None
 
     logger.info(
@@ -90,6 +94,40 @@ async def generate_speech(
                 "voice": request.voice
             }
         )
+
+        # Save to PostgreSQL database
+        try:
+            from config import settings
+            db_conversion = TTSConversion(
+                user_id=str(user_id),
+                text=request.prompt,
+                audio_url=s3_keys["audio"],
+                model=request.model or "gtts",
+                voice=request.voice or "default",
+                language=request.voice or "en",  # gTTS uses voice param as language
+                file_size_bytes=len(audio_bytes),
+                s3_key=s3_keys["audio"],
+                s3_bucket=settings.s3_bucket,
+                extra_metadata={
+                    "request_id": request_id,
+                    "provider": "gtts",
+                    "latency_ms": latency_ms,
+                    "status_code": 200,
+                    "cost_usd": 0.0,
+                    "record_key": s3_keys["record"],
+                    "input_key": s3_keys.get("input")
+                }
+            )
+            db.add(db_conversion)
+            db.commit()
+            db.refresh(db_conversion)
+            logger.info(
+                f"TTS conversion saved to database: db_id={db_conversion.id}")
+        except Exception as db_error:
+            logger.error(
+                f"Failed to save to database: {db_error}", exc_info=True)
+            # Don't fail the request if DB save fails
+            db.rollback()
 
         logger.info(
             f"TTS generation completed: id={request_id}, latency={latency_ms}ms")

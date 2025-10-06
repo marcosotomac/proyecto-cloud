@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
 
+    # Database Configuration (PostgreSQL)
+    database_url: str = "postgresql://tts_user:tts_password@postgres-tts:5432/tts_db"
+    db_echo: bool = False  # Set to True for SQL query logging
+
     # S3 Configuration
     s3_endpoint: str = "http://minio:9000"
     s3_access_key: str = "minio"
@@ -31,6 +35,11 @@ class Settings(BaseSettings):
     # TTS Provider (gTTS - Google Text-to-Speech Free)
     tts_provider: str = "gtts"
     gtts_default_lang: str = "en"
+
+    @property
+    def DATABASE_URL(self) -> str:
+        """Uppercase alias for SQLAlchemy compatibility"""
+        return self.database_url
 
     class Config:
         env_file = ".env"

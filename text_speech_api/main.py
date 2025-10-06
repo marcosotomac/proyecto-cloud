@@ -23,6 +23,16 @@ async def lifespan(app: FastAPI):
     logger.info(f"Environment: {settings.environment}")
     logger.info(f"S3 Bucket: {settings.s3_bucket}")
     logger.info(f"TTS Provider: gTTS (Google Text-to-Speech)")
+
+    # Initialize database
+    try:
+        from db import init_db
+        init_db()
+        logger.info("✅ PostgreSQL database initialized")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize database: {e}")
+        # Don't fail startup if DB is not available
+
     yield
     logger.info("🛑 Text-to-Speech API shutting down...")
 

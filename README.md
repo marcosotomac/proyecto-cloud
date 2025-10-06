@@ -59,7 +59,8 @@ graph TB
     Gateway -->|/tts/*| Speech[Text-to-Speech<br/>FastAPI:8001]
     Gateway -->|/analytics/*| Analytics[Analytics Service<br/>FastAPI:8005]
 
-    Users -->|SQL| PG[(PostgreSQL<br/>:5432)]
+    Users -->|SQL| PG[(PostgreSQL<br/>Users DB<br/>:5432)]
+    Speech -->|SQL| PGTTS[(PostgreSQL<br/>TTS DB<br/>:5434)]
     LLM -->|NoSQL| Mongo[(MongoDB<br/>:27017)]
     Analytics -->|NoSQL| Mongo
 
@@ -77,6 +78,7 @@ graph TB
     style Image fill:#ffeaa7
     style Speech fill:#dfe6e9
     style Analytics fill:#a29bfe
+    style PGTTS fill:#74b9ff
 ```
 
 ## 🎯 Servicios Implementados
@@ -158,15 +160,19 @@ graph TB
 
 - **Puerto:** 8001
 - **Framework:** FastAPI + Python 3.11
+- **Base de datos:** PostgreSQL 16 (TTS DB)
 - **Almacenamiento:** MinIO (S3-compatible)
 - **Proveedor:** Google Text-to-Speech (gTTS)
 - **Características:**
   - 🔊 Síntesis de voz desde texto
   - 🌍 20+ idiomas soportados (en, es, fr, de, it, pt, ja, zh-CN, ko, etc.)
   - 🎚️ Modelos: gtts (normal), gtts-slow (velocidad lenta)
-  - 🗄️ Almacenamiento en S3 con metadatos
+  - 🗄️ Almacenamiento dual: S3 para audio + PostgreSQL para metadata
+  - 📊 Persistencia relacional de todas las conversiones TTS
+  - 🔍 Búsquedas eficientes con índices en user_id y created_at
+  - 📈 Tracking de latencia, tamaño de archivos y costos
   - 👤 Soporte para usuarios autenticados y anónimos
-  - 📋 Historial organizado por fecha
+  - 📋 Historial completo con metadata JSON flexible
   - 🔗 URLs firmadas temporales para descarga
   - 🎵 Formato MP3
 
@@ -206,7 +212,9 @@ graph TB
 
 ### Bases de Datos
 
-- **PostgreSQL 16:** Datos relacionales (usuarios, sesiones)
+- **PostgreSQL 16:**
+  - Users DB (:5432) - Datos relacionales (usuarios, sesiones)
+  - TTS DB (:5434) - Conversiones text-to-speech con metadata
 - **MongoDB 7:** Datos no estructurados (chats, analytics)
 - **MinIO:** Almacenamiento S3-compatible (imágenes, audios)
 

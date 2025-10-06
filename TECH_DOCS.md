@@ -6,39 +6,59 @@
 
 ```mermaid
 graph TB
-    Client[Cliente Web/Móvil]
+    Client[Cliente Web/Móvil<br/>Next.js 15]
 
-    subgraph "API Gateway (Futuro)"
-        GW[Gateway NestJS]
+    subgraph "API Gateway"
+        GW[Gateway FastAPI<br/>:8080]
     end
 
     subgraph "Servicios Core"
         Auth[Users Service<br/>NestJS + PostgreSQL<br/>:3000]
+        LLM[LLM Chat Service<br/>FastAPI + MongoDB<br/>:8002]
         Image[Text-Image API<br/>FastAPI + S3<br/>:8000]
+        Speech[Text-to-Speech API<br/>FastAPI + PostgreSQL + S3<br/>:8001]
+        Analytics[Analytics API<br/>FastAPI + MongoDB<br/>:8005]
     end
 
-    subgraph "Storage"
-        PG[(PostgreSQL<br/>:5432)]
-        S3[(MinIO S3<br/>:9000)]
+    subgraph "Storage Layer"
+        PG[(PostgreSQL Users<br/>:5432)]
+        PGTTS[(PostgreSQL TTS<br/>:5434)]
+        Mongo[(MongoDB<br/>:27017)]
+        S3[(MinIO S3<br/>:9000/9001)]
     end
 
-    subgraph "Servicios Futuros"
-        Summary[Summarizer API<br/>FastAPI + S3]
-        Chat[Chat API<br/>FastAPI + S3]
-        Analytics[Analytics API<br/>FastAPI + MongoDB]
+    subgraph "External APIs"
+        GitHub[GitHub Models<br/>GPT-4o]
+        Pollinations[Pollinations.ai<br/>Image Gen]
+        GTTS[Google TTS]
     end
 
-    Client --> Auth
-    Client --> Image
+    Client --> GW
+
+    GW --> Auth
+    GW --> LLM
+    GW --> Image
+    GW --> Speech
+    GW --> Analytics
 
     Auth --> PG
+    Speech --> PGTTS
+    Speech --> S3
+    LLM --> Mongo
+    Analytics --> Mongo
     Image --> S3
-    Image -.->|JWT Verify| Auth
+
+    LLM --> GitHub
+    Image --> Pollinations
+    Speech --> GTTS
 
     style Auth fill:#e1f5fe
-    style Image fill:#f3e5f5
-    style PG fill:#e8f5e8
-    style S3 fill:#fff3e0
+    style LLM fill:#f3e5f5
+    style Image fill:#fff3e0
+    style Speech fill:#e8f5e8
+    style Analytics fill:#fce4ec
+    style GW fill:#ffebee
+    style PGTTS fill:#b3e5fc
 ```
 
 ## 🔐 Flujo de Autenticación
@@ -97,6 +117,46 @@ CREATE TABLE sessions (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_sessions_refresh_token ON sessions(refresh_token);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+```
+
+### PostgreSQL - Text-to-Speech Service
+
+```sql
+-- TTS Conversions table
+CREATE TABLE tts_conversions (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    text TEXT NOT NULL,
+    audio_url VARCHAR(500) NOT NULL,
+    model VARCHAR(100) DEFAULT 'gtts',
+    voice VARCHAR(100),
+    language VARCHAR(10) DEFAULT 'en',
+    duration_seconds DECIMAL(10,2),
+    file_size_bytes BIGINT,
+    s3_key VARCHAR(500) NOT NULL,
+    s3_bucket VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+    metadata JSON
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_tts_conversions_user_id ON tts_conversions(user_id);
+CREATE INDEX idx_tts_conversions_created_at ON tts_conversions(created_at);
+CREATE INDEX idx_tts_conversions_id ON tts_conversions(id);
+```
+
+**Metadata JSON Structure:**
+
+```json
+{
+  "request_id": "uuid",
+  "provider": "gtts",
+  "latency_ms": 450,
+  "status_code": 200,
+  "cost_usd": 0.0,
+  "record_key": "s3-path/record.json",
+  "input_key": "s3-path/input.json"
+}
 ```
 
 ### S3 - Estructura de Archivos

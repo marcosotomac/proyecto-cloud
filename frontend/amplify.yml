@@ -1,0 +1,25 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Instalar pnpm globalmente
+        - npm install -g pnpm@9
+        # Instalar dependencias usando lockfile
+        - pnpm install --frozen-lockfile
+    build:
+      commands:
+        # Build para producción
+        - pnpm run build
+  artifacts:
+    # Para Static Export (si usas output: 'export' en next.config.ts)
+    # Cambia a 'out' si configuras static export
+    # Usa '.next' para SSR completo
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
+      - .pnpm-store/**/*
